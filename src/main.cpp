@@ -13,6 +13,18 @@
 
 CRGB leds[NUM_LEDS];
 
+unsigned long timer = millis();
+
+enum State 
+{
+    MOVE_FORWARD,
+    MOVE_BACKWARD,
+    MAIN_PRESSED,
+    NO_ACTION
+};
+
+State state = NO_ACTION;
+
 void setup()
 {
     FastLED.addLeds<WS2812B, DATA_PIN, RGB>(leds, NUM_LEDS);
@@ -44,13 +56,12 @@ void testColor(CRGB color)
     delay(1000);
 }
 
+void readInputs()
+{
+
+}
+
 void loop()
 {
-    testColor(CRGB::White);
-    testColor(CRGB::Red);
-    testColor(CRGB::Green);
-    testColor(CRGB::Blue);
-    testColor(CRGB::Yellow);
-    testColor(CRGB::Cyan);
-    testColor(CRGB::Magenta);
+    
 }
