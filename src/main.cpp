@@ -4,7 +4,7 @@
 #define NUM_LEDS 124
 #define DATA_PIN 3
 
-#define BUTTON_PIN 4
+#define BUTTON_PIN 13
 
 #define FORWARD_PIN 8
 #define BACKWARD_PIN 9
@@ -50,7 +50,7 @@ void setup()
 
     pinMode(BUTTON_PIN, INPUT_PULLUP);
 
-    pinMode(FORWARD_PIN, INPUT);
+    pinMode(FORWARD_PIN, INPUT_PULLUP);
     pinMode(BACKWARD_PIN, INPUT);
     pinMode(STOVE_PIN, INPUT);
     pinMode(CHARGE_PIN, INPUT);
@@ -62,6 +62,53 @@ void setup()
     FastLED.show();
 
     Serial.begin(9600);
+}
+
+void moveAnimation(bool direction)
+{
+    CHSV color = CHSV(hue, 255, 255);
+    if (direction)
+    {
+        for (int i = 0; i < NUM_LEDS; i++)
+        {
+            if (i % 20 < 10)
+            {
+                int w = map(i % 20, 0, 9, 10, 255);
+                leds[i] = CHSV(hue, 255, w);
+            }
+            else
+            {
+                leds[i] = CRGB::Black;
+            }
+        }
+        CRGB tempColor;
+        for (size_t i = 0; i < 200; i++)
+        {
+            int halfLed = NUM_LEDS / 2;
+            FastLED.show();
+            delay(20);
+            for (int L = halfLed; L >= 0; L--)
+            {
+                if(L == 0){
+                    leds[0] = tempColor;
+                    continue;
+                }
+                if(L == halfLed)
+                    tempColor = leds[halfLed];
+                leds[L] = leds[L-1];
+            }
+            for (int L = halfLed+1; L < NUM_LEDS; L++)
+            {
+                if(L == NUM_LEDS-1){
+                    leds[NUM_LEDS-1] = tempColor;
+                    continue;
+                }
+                if(L == halfLed+1)
+                    tempColor = leds[halfLed+1];
+                leds[L] = leds[L+1];
+            }
+        }
+    }
 }
 
 void testColor(CRGB color)
@@ -127,14 +174,17 @@ void handleTune()
 void readInputs()
 {
     bool mainButton = !digitalRead(BUTTON_PIN);
+    bool forwardButton = !digitalRead(FORWARD_PIN);
+    bool backwardButton = digitalRead(BACKWARD_PIN);
 
     if (mainButton)
     {
         switch (state)
         {
         case OFF:
+            Serial.println("OFF");
             state = ON;
-            for (value = 0 ; value < 255; value++)
+            for (value = 0; value < 255; value++)
             {
                 for (size_t i = 0; i < NUM_LEDS; i++)
                 {
@@ -144,9 +194,11 @@ void readInputs()
             }
             break;
         case ON:
+            Serial.println("ON");
             state = TUNE;
             break;
         case TUNE:
+            Serial.println("TUNE");
             handleTune();
             break;
 
@@ -157,6 +209,10 @@ void readInputs()
     else
     {
         buttonPressTime = 0;
+    }
+    if (forwardButton)
+    {
+        moveAnimation(true);
     }
 }
 
