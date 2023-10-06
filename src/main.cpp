@@ -6,10 +6,10 @@
 
 #define BUTTON_PIN 13
 
-#define FORWARD_PIN 8
-#define BACKWARD_PIN 9
-#define STOVE_PIN 10
-#define CHARGE_PIN 11
+#define FORWARD_PIN 11
+#define BACKWARD_PIN 12
+#define STOVE_PIN 0
+#define CHARGE_PIN 0
 
 CRGB leds[NUM_LEDS];
 
@@ -45,8 +45,7 @@ int value = 0;
 
 void setup()
 {
-    // FastLED.addLeds<WS2812B, DATA_PIN, RGB>(leds, NUM_LEDS);
-    FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
+    FastLED.addLeds<WS2812B, DATA_PIN, RGB>(leds, NUM_LEDS);
 
     pinMode(BUTTON_PIN, INPUT_PULLUP);
 
