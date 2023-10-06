@@ -4,14 +4,19 @@
 #define NUM_LEDS 124
 #define DATA_PIN 3
 
-#define BUTTON_PIN 13
+#define BUTTON_PIN 4
 
 #define FORWARD_PIN 11
 #define BACKWARD_PIN 12
 #define STOVE_PIN 0
 #define CHARGE_PIN 0
 
+//methods
+void initMoveArray();
+void tickMoveArray();
+
 CRGB leds[NUM_LEDS];
+CRGB moveArray[NUM_LEDS];
 
 // Button
 unsigned long buttonPressTime = 0;
@@ -65,47 +70,53 @@ void setup()
 
 void moveAnimation(bool direction)
 {
-    CHSV color = CHSV(hue, 255, 255);
+    CRGB tempColor;
     if (direction)
     {
-        for (int i = 0; i < NUM_LEDS; i++)
+        // for (int i = 0; i < NUM_LEDS; i++)
+        // {
+        //     if (i % 20 < 10)
+        //     {
+        //         int w = map(i % 20, 0, 9, 10, 255);
+        //         leds[i] = CHSV(hue, 255, w);
+        //     }
+        //     else
+        //     {
+        //         leds[i] = CRGB::Black;
+        //     }
+        // }
+        initMoveArray();
+        for (size_t i = 0; i < 20; i++)
         {
-            if (i % 20 < 10)
+            for (size_t i = 0; i < NUM_LEDS; i++)
             {
-                int w = map(i % 20, 0, 9, 10, 255);
-                leds[i] = CHSV(hue, 255, w);
+                leds[i] = moveArray[i];
             }
-            else
-            {
-                leds[i] = CRGB::Black;
-            }
-        }
-        CRGB tempColor;
-        for (size_t i = 0; i < 200; i++)
-        {
-            int halfLed = NUM_LEDS / 2;
             FastLED.show();
-            delay(20);
-            for (int L = halfLed; L >= 0; L--)
-            {
-                if(L == 0){
-                    leds[0] = tempColor;
-                    continue;
-                }
-                if(L == halfLed)
-                    tempColor = leds[halfLed];
-                leds[L] = leds[L-1];
-            }
-            for (int L = halfLed+1; L < NUM_LEDS; L++)
-            {
-                if(L == NUM_LEDS-1){
-                    leds[NUM_LEDS-1] = tempColor;
-                    continue;
-                }
-                if(L == halfLed+1)
-                    tempColor = leds[halfLed+1];
-                leds[L] = leds[L+1];
-            }
+            delay(50);
+            tickMoveArray();
+
+            
+            // for (int L = halfLed; L >= 0; L--)
+            // {
+            //     if(L == 0){
+            //         leds[0] = tempColor;
+            //         continue;
+            //     }
+            //     if(L == halfLed)
+            //         tempColor = leds[halfLed];
+            //     leds[L] = leds[L-1];
+            // }
+            // for (int L = halfLed+1; L < NUM_LEDS; L++)
+            // {
+            //     if(L == NUM_LEDS-1){
+            //         leds[NUM_LEDS-1] = tempColor;
+            //         continue;
+            //     }
+            //     if(L == halfLed+1)
+            //         tempColor = leds[halfLed+1];
+            //     leds[L] = leds[L+1];
+            // }
         }
     }
 }
@@ -218,4 +229,71 @@ void readInputs()
 void loop()
 {
     readInputs();
+}
+
+///implementation
+void initMoveArray()
+{
+    for (int i = 0; i < NUM_LEDS; i++)
+    {
+        if (i % 20 < 10)
+        {
+            int w = map(i % 20, 0, 9, 10, 255);
+            moveArray[i] = CHSV(hue, 255, w);
+        }
+        else
+        {
+            moveArray[i] = CRGB::Black;
+        }
+    }
+}
+
+void tickMoveArray()
+{
+    CRGB tempColor;
+    int halfLed = NUM_LEDS / 2;
+    for (int L = halfLed; L >= 0; L--)
+    {
+        if (L == 0)
+        {
+            moveArray[0] = tempColor;
+            continue;
+        }
+        if (L == halfLed)
+            tempColor = moveArray[halfLed];
+        moveArray[L] = moveArray[L - 1];
+    }
+    for (int L = halfLed + 1; L < NUM_LEDS; L++)
+    {
+        if (L == NUM_LEDS - 1)
+        {
+            moveArray[NUM_LEDS - 1] = tempColor;
+            continue;
+        }
+        if (L == halfLed + 1)
+            tempColor = moveArray[halfLed + 1];
+        moveArray[L] = moveArray[L + 1];
+    }
+
+    //
+    // for (int L = 0; L < halfLed; L++)
+    // {
+    //     if (L == 0)
+    //     {
+    //         tempColor = moveArray[0];
+    //         moveArray[0] = moveArray[NUM_LEDS - 1];
+    //         continue;
+    //     }
+    //     moveArray[L - 1] = moveArray[L];
+    // }
+
+    // for (int L = NUM_LEDS - 1; L >= halfLed + 1; L--)
+    // {
+    //     if (L == NUM_LEDS - 1)
+    //     {
+    //         moveArray[NUM_LEDS - 1] = tempColor;
+    //         continue;
+    //     }
+    //     moveArray[L] = moveArray[L - 1];
+    // }
 }
