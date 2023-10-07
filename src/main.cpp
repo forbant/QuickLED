@@ -203,6 +203,10 @@ void readInputs()
     {
         moveAnimation(true);
     }
+    if (backwardButton)
+    {
+        moveAnimation(false);
+    }
 }
 
 void loop()
