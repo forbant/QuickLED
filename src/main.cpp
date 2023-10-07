@@ -12,6 +12,7 @@ void tickMoveArray(bool);
 
 // const
 const int beamSize = 31;
+const int contrastValue = 50;
 
 // Button
 unsigned long buttonPressTime = 0;
@@ -85,22 +86,15 @@ void moveAnimation(bool direction)
     }
 }
 
-void testColor(CRGB color)
+void testColor()
 {
-    for (size_t i = 0; i < NUM_LEDS; i++)
+    CHSV color = CHSV(hue, 255, value);
+    Serial.print("value:");Serial.println(value);
+    for (int i = 0; i < NUM_LEDS; i++)
     {
         leds[i] = color;
         FastLED.show();
-        delay(10);
     }
-    delay(2000);
-    for (size_t i = 0; i < NUM_LEDS; i++)
-    {
-        leds[i] = CRGB::Black;
-        FastLED.show();
-        delay(10);
-    }
-    delay(1000);
 }
 
 void changeColor()
@@ -142,6 +136,8 @@ void handleTune()
             }
             FastLED.show();
         }
+        value++;
+        Serial.print("value:");Serial.println(value);
     }
 }
 
@@ -150,6 +146,7 @@ void readInputs()
     bool mainButton = !digitalRead(BUTTON_PIN);
     bool forwardButton = !digitalRead(FORWARD_PIN);
     bool backwardButton = !digitalRead(BACKWARD_PIN);
+    static bool isMoving = false;
 
     if (mainButton)
     {
@@ -166,6 +163,7 @@ void readInputs()
                 }
                 FastLED.show();
             }
+            Serial.print("value:");Serial.println(value);
             break;
         case ON:
             Serial.println("ON");
@@ -186,11 +184,24 @@ void readInputs()
     }
     if (forwardButton)
     {
-        moveAnimation(true);
+        if(!digitalRead(FORWARD_PIN))
+        {
+            moveAnimation(true);
+            isMoving = true;
+        }
     }
     if (backwardButton)
     {
-        moveAnimation(false);
+        if(!digitalRead(BACKWARD_PIN))
+        {
+            moveAnimation(false);
+            isMoving = true;
+        }
+    }
+
+    if(!forwardButton && !backwardButton && isMoving) {
+        testColor();
+        isMoving = false;
     }
 }
 
@@ -207,7 +218,7 @@ void initMoveArray()
     // Fill the array with four complete sine waves
     for (int i = 0; i < NUM_LEDS; i++) {
         int s = cos(i * stepSize)*100;
-        int v = map(s, -100, 100, 50, 255);
+        int v = map(s, -100, 100, contrastValue, 255);
         moveArray[i] = CHSV(hue, 255, v);
     }
 }
