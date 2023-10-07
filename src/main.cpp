@@ -1,15 +1,6 @@
 #include <Arduino.h>
 #include "FastLED.h"
-
-#define NUM_LEDS 124
-#define DATA_PIN 3
-
-#define BUTTON_PIN 13
-
-#define FORWARD_PIN 11
-#define BACKWARD_PIN 12
-#define STOVE_PIN 0
-#define CHARGE_PIN 0
+#include "config.h"
 
 CRGB leds[NUM_LEDS];
 
@@ -65,7 +56,6 @@ void setup()
 
 void moveAnimation(bool direction)
 {
-    CHSV color = CHSV(hue, 255, 255);
     if (direction)
     {
         for (int i = 0; i < NUM_LEDS; i++)
