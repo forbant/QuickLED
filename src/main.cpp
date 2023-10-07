@@ -3,6 +3,15 @@
 #include "config.h"
 
 CRGB leds[NUM_LEDS];
+int valueArray[NUM_LEDS];
+CRGB moveArray[NUM_LEDS];
+
+//methods
+void initMoveArray();
+void tickMoveArray(bool);
+
+// const
+const int beamSize = 31;
 
 // Button
 unsigned long buttonPressTime = 0;
@@ -36,12 +45,12 @@ int value = 0;
 
 void setup()
 {
-    FastLED.addLeds<WS2812B, DATA_PIN, RGB>(leds, NUM_LEDS);
+    FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
 
     pinMode(BUTTON_PIN, INPUT_PULLUP);
 
     pinMode(FORWARD_PIN, INPUT_PULLUP);
-    pinMode(BACKWARD_PIN, INPUT);
+    pinMode(BACKWARD_PIN, INPUT_PULLUP);
     pinMode(STOVE_PIN, INPUT);
     pinMode(CHARGE_PIN, INPUT);
 
@@ -49,54 +58,30 @@ void setup()
     {
         leds[i] = CRGB::Black;
     }
+    initMoveArray();
+    for(int i = 0; i < NUM_LEDS; i++) {
+        leds[i] = moveArray[i];
+    }
+    leds[NUM_LEDS/2] = CRGB(0,0,255);
     FastLED.show();
 
     Serial.begin(9600);
+    
 }
 
 void moveAnimation(bool direction)
 {
-    if (direction)
+    CRGB tempColor;
+    initMoveArray();
+    for (size_t i = 0; i < beamSize; i++)
     {
-        for (int i = 0; i < NUM_LEDS; i++)
+        for (size_t i = 0; i < NUM_LEDS; i++)
         {
-            if (i % 20 < 10)
-            {
-                int w = map(i % 20, 0, 9, 10, 255);
-                leds[i] = CHSV(hue, 255, w);
-            }
-            else
-            {
-                leds[i] = CRGB::Black;
-            }
+            leds[i] = moveArray[i];
         }
-        CRGB tempColor;
-        for (size_t i = 0; i < 200; i++)
-        {
-            int halfLed = NUM_LEDS / 2;
-            FastLED.show();
-            delay(20);
-            for (int L = halfLed; L >= 0; L--)
-            {
-                if(L == 0){
-                    leds[0] = tempColor;
-                    continue;
-                }
-                if(L == halfLed)
-                    tempColor = leds[halfLed];
-                leds[L] = leds[L-1];
-            }
-            for (int L = halfLed+1; L < NUM_LEDS; L++)
-            {
-                if(L == NUM_LEDS-1){
-                    leds[NUM_LEDS-1] = tempColor;
-                    continue;
-                }
-                if(L == halfLed+1)
-                    tempColor = leds[halfLed+1];
-                leds[L] = leds[L+1];
-            }
-        }
+        FastLED.show();
+        delay(20);
+        tickMoveArray(direction);
     }
 }
 
@@ -164,7 +149,7 @@ void readInputs()
 {
     bool mainButton = !digitalRead(BUTTON_PIN);
     bool forwardButton = !digitalRead(FORWARD_PIN);
-    bool backwardButton = digitalRead(BACKWARD_PIN);
+    bool backwardButton = !digitalRead(BACKWARD_PIN);
 
     if (mainButton)
     {
@@ -212,4 +197,76 @@ void readInputs()
 void loop()
 {
     readInputs();
+}
+
+///implementation
+void initMoveArray()
+{
+    float stepSize = 2 * PI / (NUM_LEDS/4);
+
+    // Fill the array with four complete sine waves
+    for (int i = 0; i < NUM_LEDS; i++) {
+        int s = cos(i * stepSize)*100;
+        int v = map(s, -100, 100, 50, 255);
+        moveArray[i] = CHSV(hue, 255, v);
+    }
+}
+
+void tickMoveArray(bool direction)
+{
+    CRGB tempColor;
+    int halfLed = NUM_LEDS / 2;
+    if (direction)
+    {
+        for (int L = halfLed; L >= 0; L--)
+        {
+            if (L == 0)
+            {
+                moveArray[0] = tempColor;
+                continue;
+            }
+            if (L == halfLed)
+                tempColor = moveArray[halfLed];
+            moveArray[L] = moveArray[L - 1];
+        }
+        for (int L = halfLed + 1; L < NUM_LEDS; L++)
+        {
+            if (L == NUM_LEDS - 1)
+            {
+                moveArray[NUM_LEDS - 1] = tempColor;
+                continue;
+            }
+            if (L == halfLed + 1)
+                tempColor = moveArray[halfLed + 1];
+            moveArray[L] = moveArray[L + 1];
+        }
+    }
+    else
+    {
+        for (int L = 0; L < halfLed; L++)
+        {
+            if (L == 0)
+            {
+                tempColor = moveArray[0];
+            }
+            if (L == halfLed - 1){
+                moveArray[L] = tempColor;
+                continue;
+            }
+            moveArray[L] = moveArray[L + 1];
+        }
+        for (int L = NUM_LEDS - 1; L >= halfLed; L--)
+        {
+            if (L == NUM_LEDS - 1)
+            {
+                moveArray[NUM_LEDS - 1] = tempColor;
+            }
+            if (L == halfLed){
+                moveArray[L] = tempColor;
+                continue;
+            }
+                
+            moveArray[L] = moveArray[L - 1];
+        }
+    }
 }
