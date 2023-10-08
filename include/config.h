@@ -5,5 +5,4 @@
 
 #define FORWARD_PIN 11
 #define BACKWARD_PIN 12
-#define STOVE_PIN 0
-#define CHARGE_PIN 0
+#define CHARGE_PIN A0

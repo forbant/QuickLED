@@ -40,7 +40,6 @@ void setup()
     pinMode(BUTTON_PIN, INPUT_PULLUP);
     pinMode(FORWARD_PIN, INPUT_PULLUP);
     pinMode(BACKWARD_PIN, INPUT_PULLUP);
-    pinMode(STOVE_PIN, INPUT);
     pinMode(CHARGE_PIN, INPUT);
 
     for (size_t i = 0; i < NUM_LEDS; i++)
@@ -49,6 +48,16 @@ void setup()
     }
     FastLED.show();
     Serial.begin(9600);
+}
+
+void readLEDState()
+{
+    static unsigned long a = 0;
+    int state = analogRead(CHARGE_PIN);
+    Serial.print(a);
+    Serial.print(",");
+    Serial.println(state);
+    delay(100);
 }
 
 void moveAnimation(bool direction)
@@ -127,6 +136,7 @@ void readInputs()
     bool mainButton = !digitalRead(BUTTON_PIN);
     bool forwardButton = !digitalRead(FORWARD_PIN);
     bool backwardButton = !digitalRead(BACKWARD_PIN);
+    bool chargeLedState = analogRead(CHARGE_PIN);
     static bool isMoving = false;
 
     if (mainButton)
@@ -188,7 +198,8 @@ void readInputs()
 
 void loop()
 {
-    readInputs();
+    //readInputs();
+    readLEDState();
 }
 
 ///implementation
@@ -262,24 +273,3 @@ void tickMoveArray(bool direction)
         }
     }
 }
-
-
-// #define A_PIN A0
-// #define D_PIN 13
-
-// void setup()
-// {
-//     pinMode(A_PIN, INPUT);
-//     pinMode(D_PIN, INPUT);
-//     Serial.begin(9600);
-// }
-
-// void loop()
-// {
-//     int d = digitalRead(D_PIN);
-//     int a = analogRead(A_PIN);
-//     Serial.print("a = ");
-//     Serial.print(a);
-//     Serial.print("\td = ");
-//     Serial.println(d);
-// }
