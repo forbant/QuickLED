@@ -11,7 +11,7 @@ void initMoveArray();
 void tickMoveArray(bool);
 
 // const
-const int beamSize = 31;
+const int waveSize = 31;
 const int contrastValue = 50;
 
 // Button
@@ -30,17 +30,6 @@ enum State
 
 State state = OFF;
 
-CRGB mainColor[] =
-    {
-        CRGB(200, 0, 0),
-        CRGB(200, 200, 0),
-        CRGB(0, 200, 0),
-        CRGB(0, 200, 200),
-        CRGB(0, 0, 200),
-        CRGB(200, 0, 200),
-        CRGB(150, 150, 150),
-};
-int colorIndex = 0;
 int hue = 0;
 int value = 0;
 
@@ -49,7 +38,6 @@ void setup()
     FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
 
     pinMode(BUTTON_PIN, INPUT_PULLUP);
-
     pinMode(FORWARD_PIN, INPUT_PULLUP);
     pinMode(BACKWARD_PIN, INPUT_PULLUP);
     pinMode(STOVE_PIN, INPUT);
@@ -59,22 +47,15 @@ void setup()
     {
         leds[i] = CRGB::Black;
     }
-    initMoveArray();
-    for(int i = 0; i < NUM_LEDS; i++) {
-        leds[i] = moveArray[i];
-    }
-    leds[NUM_LEDS/2] = CRGB(0,0,255);
     FastLED.show();
-
     Serial.begin(9600);
-    
 }
 
 void moveAnimation(bool direction)
 {
     CRGB tempColor;
     initMoveArray();
-    for (size_t i = 0; i < beamSize; i++)
+    for (size_t i = 0; i < waveSize; i++)
     {
         for (size_t i = 0; i < NUM_LEDS; i++)
         {
@@ -86,13 +67,13 @@ void moveAnimation(bool direction)
     }
 }
 
-void testColor()
+void endMoveAction()
 {
     CHSV color = CHSV(hue, 255, value);
-    Serial.print("value:");Serial.println(value);
-    for (int i = 0; i < NUM_LEDS; i++)
+    for (int i = 0; i < NUM_LEDS / 2; i++)
     {
         leds[i] = color;
+        leds[NUM_LEDS - 1 - i] = color;
         FastLED.show();
     }
 }
@@ -200,7 +181,7 @@ void readInputs()
     }
 
     if(!forwardButton && !backwardButton && isMoving) {
-        testColor();
+        endMoveAction();
         isMoving = false;
     }
 }
@@ -281,3 +262,24 @@ void tickMoveArray(bool direction)
         }
     }
 }
+
+
+// #define A_PIN A0
+// #define D_PIN 13
+
+// void setup()
+// {
+//     pinMode(A_PIN, INPUT);
+//     pinMode(D_PIN, INPUT);
+//     Serial.begin(9600);
+// }
+
+// void loop()
+// {
+//     int d = digitalRead(D_PIN);
+//     int a = analogRead(A_PIN);
+//     Serial.print("a = ");
+//     Serial.print(a);
+//     Serial.print("\td = ");
+//     Serial.println(d);
+// }
