@@ -2,6 +2,8 @@
 #include "FastLED.h"
 #include "config.h"
 
+#define READING_BUFFER 7
+
 CRGB leds[NUM_LEDS];
 int valueArray[NUM_LEDS];
 CRGB moveArray[NUM_LEDS];
@@ -9,10 +11,15 @@ CRGB moveArray[NUM_LEDS];
 //methods
 void initMoveArray();
 void tickMoveArray(bool);
+void chargingAnimation(HSVHue);
 
 // const
 const int waveSize = 31;
 const int contrastValue = 50;
+unsigned long chargeLedReadTimer = 0;
+const int chargeLedReadThreshold = 250;
+
+bool readingBuffer[READING_BUFFER];
 
 // Button
 unsigned long buttonPressTime = 0;
@@ -30,7 +37,7 @@ enum State
 
 State state = OFF;
 
-int hue = 0;
+size_t hue = 0;
 int value = 0;
 
 void setup()
@@ -40,7 +47,7 @@ void setup()
     pinMode(BUTTON_PIN, INPUT_PULLUP);
     pinMode(FORWARD_PIN, INPUT_PULLUP);
     pinMode(BACKWARD_PIN, INPUT_PULLUP);
-    pinMode(CHARGE_PIN, INPUT);
+    pinMode(CHARGE_PIN, INPUT_PULLUP);
 
     for (size_t i = 0; i < NUM_LEDS; i++)
     {
@@ -52,10 +59,12 @@ void setup()
 
 void readLEDState()
 {
-    static unsigned long a = 0;
+    static unsigned long a = 900;
     int state = analogRead(CHARGE_PIN);
+    Serial.print("a:");
     Serial.print(a);
     Serial.print(",");
+    Serial.print("s:");
     Serial.println(state);
     delay(100);
 }
@@ -136,8 +145,46 @@ void readInputs()
     bool mainButton = !digitalRead(BUTTON_PIN);
     bool forwardButton = !digitalRead(FORWARD_PIN);
     bool backwardButton = !digitalRead(BACKWARD_PIN);
-    bool chargeLedState = analogRead(CHARGE_PIN);
     static bool isMoving = false;
+    static bool isCharging = false;
+
+    static int index = 0;
+
+    if((millis() - chargeLedReadTimer) > chargeLedReadThreshold) {
+        int chargeLedState = analogRead(CHARGE_PIN);
+        chargeLedReadTimer = millis();
+        Serial.print("chargingAnimation: ");
+        Serial.println(chargeLedState);
+        
+        readingBuffer[index] = chargeLedState < 900;
+        for (int i = 0; i < READING_BUFFER; i++)
+        {
+            Serial.print(readingBuffer[i]);Serial.print(" ");
+        }
+        Serial.println(";");
+        index++;
+        if(index >= READING_BUFFER)
+        {
+            index = 0;
+        }
+        bool wasBlink = false;
+        for (int i = 0; i < READING_BUFFER; i++)
+        {
+            if(readingBuffer[i])
+                wasBlink = true;
+        }
+        if(!wasBlink && isCharging)
+        {
+            chargingAnimation(HUE_BLUE);
+            isCharging = false;
+        }
+        
+        if(chargeLedState < 900 && !isCharging)
+        {
+            chargingAnimation(HUE_GREEN);
+            isCharging = true;
+        }
+    }
 
     if (mainButton)
     {
@@ -198,8 +245,7 @@ void readInputs()
 
 void loop()
 {
-    //readInputs();
-    readLEDState();
+    readInputs();
 }
 
 ///implementation
@@ -271,5 +317,51 @@ void tickMoveArray(bool direction)
                 
             moveArray[L] = moveArray[L - 1];
         }
+    }
+}
+
+void chargingAnimation(HSVHue blinkHue) 
+{
+    int speed = 5;
+
+    //Decrease brightness to 0
+    for(int i = value; i >= 0; i-=speed)
+    {
+        for(size_t k = 0; k < NUM_LEDS; k++)
+        {
+            leds[k] = CHSV(hue, 255, i);
+        }
+        FastLED.show();
+    }
+
+    // //Light green light
+    for(int i = 0; i < 255; i+=speed)
+    {
+        for(int k = 0; k < NUM_LEDS; k++)
+        {
+            leds[k] = CHSV(blinkHue, 255, i);
+        }
+        FastLED.show();
+    }
+    delay(300);
+
+    // //Decrease green light brightness to 0
+    for(int i = 255; i >= 0; i-=speed)
+    {
+        for(int k = 0; k < NUM_LEDS; k++)
+        {
+            leds[k] = CHSV(blinkHue, 255, i);
+        }
+        FastLED.show();
+    }
+
+    //Show saved state
+    for(int i = 0; i < value; i+=speed)
+    {
+        for(int k = 0; k < NUM_LEDS; k++)
+        {
+            leds[k] = CHSV(hue, 255, i);
+        }
+        FastLED.show();
     }
 }
