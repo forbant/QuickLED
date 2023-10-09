@@ -2,8 +2,6 @@
 #include "FastLED.h"
 #include "config.h"
 
-#define READING_BUFFER 7
-
 CRGB leds[NUM_LEDS];
 int valueArray[NUM_LEDS];
 CRGB moveArray[NUM_LEDS];
@@ -17,9 +15,11 @@ void chargingAnimation(HSVHue);
 const int waveSize = 31;
 const int contrastValue = 50;
 unsigned long chargeLedReadTimer = 0;
-const int chargeLedReadThreshold = 250;
+const int chargeLedTimerThreshold = 250;
 
+// Charge LED read buffer
 bool readingBuffer[READING_BUFFER];
+int bufferIndex = 0;
 
 // Button
 unsigned long buttonPressTime = 0;
@@ -47,7 +47,7 @@ void setup()
     pinMode(BUTTON_PIN, INPUT_PULLUP);
     pinMode(FORWARD_PIN, INPUT_PULLUP);
     pinMode(BACKWARD_PIN, INPUT_PULLUP);
-    pinMode(CHARGE_PIN, INPUT_PULLUP);
+    pinMode(CHARGE_PIN, INPUT);
 
     for (size_t i = 0; i < NUM_LEDS; i++)
     {
@@ -148,24 +148,22 @@ void readInputs()
     static bool isMoving = false;
     static bool isCharging = false;
 
-    static int index = 0;
-
-    if((millis() - chargeLedReadTimer) > chargeLedReadThreshold) {
+    if((millis() - chargeLedReadTimer) > chargeLedTimerThreshold) {
         int chargeLedState = analogRead(CHARGE_PIN);
         chargeLedReadTimer = millis();
         Serial.print("chargingAnimation: ");
         Serial.println(chargeLedState);
         
-        readingBuffer[index] = chargeLedState < 900;
+        readingBuffer[bufferIndex] = chargeLedState < CHARGE_LED_THRESHOLD;
         for (int i = 0; i < READING_BUFFER; i++)
         {
             Serial.print(readingBuffer[i]);Serial.print(" ");
         }
         Serial.println(";");
-        index++;
-        if(index >= READING_BUFFER)
+        bufferIndex++;
+        if(bufferIndex >= READING_BUFFER)
         {
-            index = 0;
+            bufferIndex = 0;
         }
         bool wasBlink = false;
         for (int i = 0; i < READING_BUFFER; i++)
@@ -179,7 +177,7 @@ void readInputs()
             isCharging = false;
         }
         
-        if(chargeLedState < 900 && !isCharging)
+        if(chargeLedState < CHARGE_LED_THRESHOLD && !isCharging)
         {
             chargingAnimation(HUE_GREEN);
             isCharging = true;
