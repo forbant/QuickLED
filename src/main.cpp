@@ -15,7 +15,7 @@ void chargingAnimation(HSVHue);
 const int waveSize = 31;
 const int contrastValue = 50;
 unsigned long chargeLedReadTimer = 0;
-const int chargeLedTimerThreshold = 250;
+const int chargeLedTimerThreshold = 100;
 
 // Charge LED read buffer
 bool readingBuffer[READING_BUFFER];
